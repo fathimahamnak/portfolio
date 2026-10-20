@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Fathima Hamna K | GTA-Style 3D Open-World Portfolio | Software Engineer</title>
   <meta name="description"
     content="GTA 5-Style Playable 3D Open-World Portfolio of Fathima Hamna K - Python Fullstack Developer. Walk, drive sports cars, explore tech headquarters, and launch rockets to orbit!">
@@ -680,12 +680,71 @@
   <!-- Game Notification Banner -->
   <div class="game-quest-banner" id="game-quest-banner"></div>
 
-  <!-- Mobile On-Screen Action Buttons -->
-  <div class="mobile-touch-deck">
-    <div class="m-game-btn" id="btn-mobile-horn"><i class="fas fa-bullhorn"></i></div>
-    <div class="mobile-action-btns">
-      <div class="m-game-btn" id="btn-mobile-drive">F: DRIVE</div>
-      <div class="m-game-btn" id="btn-mobile-action">E: ENTER</div>
+  <!-- ========================================================
+       GTA V MOBILE TOUCH CONTROLLER (VIRTUAL JOYSTICK & ACTION DECK)
+       ======================================================== -->
+  <div id="mobile-controller-deck" class="mobile-controller-deck">
+    <!-- LEFT QUADRANT: VIRTUAL JOYSTICK -->
+    <div class="mobile-joystick-zone" id="mobile-joystick-zone">
+      <div class="joystick-base" id="joystick-base">
+        <div class="joystick-ring"></div>
+        <div class="joystick-arrow arrow-up"><i class="fas fa-chevron-up"></i></div>
+        <div class="joystick-arrow arrow-down"><i class="fas fa-chevron-down"></i></div>
+        <div class="joystick-arrow arrow-left"><i class="fas fa-chevron-left"></i></div>
+        <div class="joystick-arrow arrow-right"><i class="fas fa-chevron-right"></i></div>
+        <div class="joystick-knob" id="joystick-knob">
+          <div class="knob-core"></div>
+        </div>
+      </div>
+      <div class="joystick-label">TOUCH & DRAG TO MOVE</div>
+    </div>
+
+    <!-- CENTER-BOTTOM: QUICK FAST-TRAVEL & CAMERA BAR -->
+    <div class="mobile-center-dock">
+      <button class="m-dock-btn" id="m-btn-fast-travel" title="Fast Travel GPS">
+        <i class="fas fa-map-marked-alt"></i> <span>MAP</span>
+      </button>
+      <button class="m-dock-btn" id="m-btn-showroom" title="Car Showroom">
+        <i class="fas fa-car-side"></i> <span>CARS</span>
+      </button>
+      <button class="m-dock-btn" id="m-btn-cam" title="Camera Angle">
+        <i class="fas fa-video"></i> <span>CAM</span>
+      </button>
+      <button class="m-dock-btn" id="m-btn-respawn" title="Flip / Repair Car">
+        <i class="fas fa-sync-alt"></i> <span>RESET</span>
+      </button>
+    </div>
+
+    <!-- RIGHT QUADRANT: ACTION BUTTON CLUSTER -->
+    <div class="mobile-action-cluster" id="mobile-action-cluster">
+      <div class="m-action-row-upper">
+        <button class="m-action-btn m-btn-horn" id="m-btn-horn" title="Horn / Siren [H]">
+          <i class="fas fa-bullhorn"></i>
+          <span class="m-btn-label">HORN</span>
+        </button>
+        <button class="m-action-btn m-btn-sprint" id="m-btn-sprint" title="Sprint / Nitro [Shift]">
+          <i class="fas fa-bolt"></i>
+          <span class="m-btn-label">BOOST</span>
+        </button>
+      </div>
+
+      <div class="m-action-row-main">
+        <button class="m-action-btn m-btn-drive" id="m-btn-drive" title="Enter / Exit Vehicle [F]">
+          <i class="fas fa-car"></i>
+          <span class="m-btn-label" id="m-label-drive">DRIVE</span>
+        </button>
+        <button class="m-action-btn m-btn-interact" id="m-btn-interact" title="Interact / Enter [E]">
+          <i class="fas fa-door-open"></i>
+          <span class="m-btn-label" id="m-label-interact">ENTER</span>
+        </button>
+      </div>
+
+      <div class="m-action-row-lower">
+        <button class="m-action-btn m-btn-jump" id="m-btn-jump" title="Jump / Handbrake Drift [Space]">
+          <i class="fas fa-arrow-up"></i>
+          <span class="m-btn-label" id="m-label-jump">JUMP</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -3170,6 +3229,7 @@
   <script src="js/gtaRealismUpgrade.js"></script>
   <script src="js/gameAudio.js"></script>
   <script src="js/gameEngine.js"></script>
+  <script src="js/mobileControls.js"></script>
 
   <script>
     function updateLoadingProgress(percent, statusText) {

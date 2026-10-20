@@ -4177,7 +4177,7 @@ class OpenWorldGame {
     const isOverUI = (target) => {
       if (!target) return false;
       return !!(target.closest && target.closest(
-        '.game-location-modal, .gta-pause-menu-overlay, .hud-top-right-bar, .gta-quick-toggles-bar, button, input, textarea, .police-busted-overlay, .gta-loading-screen'
+        '.game-location-modal, .gta-pause-menu-overlay, .hud-top-right-bar, .gta-quick-toggles-bar, button, input, textarea, .police-busted-overlay, .gta-loading-screen, .mobile-controller-deck, .mobile-touch-deck, .mobile-joystick-zone, .mobile-action-cluster, .mobile-center-dock, .m-action-btn, .m-dock-btn'
       ));
     };
 
@@ -4254,35 +4254,56 @@ class OpenWorldGame {
       }
     });
 
-    // 6. Touch Drag support for touchpads / mobile
+    // 6. Multi-Touch Camera Orbit (Supports simultaneous joystick movement & camera drag)
+    let activeCameraTouchId = null;
     let lastTouchX = 0;
     let lastTouchY = 0;
+
     window.addEventListener('touchstart', (e) => {
       if (isMenuOpen() || isOverUI(e.target)) return;
-      if (e.touches && e.touches.length === 1) {
-        this.isMouseLooking = true;
-        lastTouchX = e.touches[0].clientX;
-        lastTouchY = e.touches[0].clientY;
-        this.lastMouseLookTime = Date.now();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        if (el && isOverUI(el)) continue;
+        if (activeCameraTouchId === null) {
+          activeCameraTouchId = t.identifier;
+          lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
+          this.isMouseLooking = true;
+          this.lastMouseLookTime = Date.now();
+          break;
+        }
       }
     }, { passive: true });
 
     window.addEventListener('touchmove', (e) => {
-      if (isMenuOpen() || isOverUI(e.target)) return;
-      if (this.isMouseLooking && e.touches && e.touches.length === 1) {
-        const dx = e.touches[0].clientX - lastTouchX;
-        const dy = e.touches[0].clientY - lastTouchY;
-        lastTouchX = e.touches[0].clientX;
-        lastTouchY = e.touches[0].clientY;
-        this.cameraYaw -= dx * (this.mouseSensitivity * 1.4);
-        this.cameraPitch = Math.max(-0.28, Math.min(0.82, this.cameraPitch + dy * (this.mouseSensitivity * 1.4)));
-        this.lastMouseLookTime = Date.now();
+      if (activeCameraTouchId === null || isMenuOpen()) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (t.identifier === activeCameraTouchId) {
+          const dx = t.clientX - lastTouchX;
+          const dy = t.clientY - lastTouchY;
+          lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
+          this.cameraYaw -= dx * (this.mouseSensitivity * 1.4);
+          this.cameraPitch = Math.max(-0.28, Math.min(0.82, this.cameraPitch + dy * (this.mouseSensitivity * 1.4)));
+          this.lastMouseLookTime = Date.now();
+          break;
+        }
       }
     }, { passive: true });
 
-    window.addEventListener('touchend', () => {
-      this.isMouseLooking = false;
-    });
+    const endCameraTouch = (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeCameraTouchId) {
+          activeCameraTouchId = null;
+          this.isMouseLooking = false;
+          break;
+        }
+      }
+    };
+    window.addEventListener('touchend', endCameraTouch, { passive: true });
+    window.addEventListener('touchcancel', endCameraTouch, { passive: true });
 
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
@@ -4377,9 +4398,18 @@ class OpenWorldGame {
     }
 
     // Space: Jump (On foot) / Handbrake Drift (In car)
-    if (e.key === ' ' && !this.isDriving && !this.isJumping) {
+    if (e.key === ' ') {
+      this.triggerJump();
+    }
+  }
+
+  triggerJump() {
+    if (!this.isDriving && !this.isJumping) {
       this.isJumping = true;
       this.jumpVelocity = 1.45;
+      if (window.gameAudio && window.gameAudio.playFootstep) {
+        window.gameAudio.playFootstep();
+      }
     }
   }
 
@@ -4840,9 +4870,9 @@ class OpenWorldGame {
   }
 
   updatePlayerMovement(delta = 0.016) {
-    let inputForward = 0;
-    let inputStrafe = 0;
-    const isSprint = this.keys['shift'];
+    let inputForward = this.analogForward || 0;
+    let inputStrafe = this.analogStrafe || 0;
+    const isSprint = this.keys['shift'] || this.mobileSprint;
     const timeScale = Math.min(delta / 0.016667, 2.0);
     const speed = (isSprint ? 3.8 : 2.2) * timeScale;
 
@@ -4978,14 +5008,16 @@ class OpenWorldGame {
     const accel = (isPolice ? (this.policeCarAcceleration || 0.17) : (this.carAcceleration || 0.22)) * timeScale;
     const friction = Math.pow(isPolice ? (this.policeCarFriction || 0.96) : (this.carFriction || 0.965), timeScale);
 
-    const isAccelerating = this.keys['w'] || this.keys['arrowup'];
-    const isReversing = this.keys['s'] || this.keys['arrowdown'];
-    const isHandbraking = this.keys[' ']; // Spacebar = Handbrake / Drift
+    const isAccelerating = this.keys['w'] || this.keys['arrowup'] || (this.analogForward > 0.15);
+    const isReversing = this.keys['s'] || this.keys['arrowdown'] || (this.analogForward < -0.15);
+    const isHandbraking = this.keys[' '] || this.mobileHandbrake; // Spacebar = Handbrake / Drift
+    const isNitroBoost = this.keys['shift'] || this.mobileSprint;
+    const effectiveMaxSpeed = isNitroBoost ? maxSpeed * 1.25 : maxSpeed;
 
     if (isAccelerating) {
-      activeSpeed = Math.min(maxSpeed, activeSpeed + accel);
+      activeSpeed = Math.min(effectiveMaxSpeed, activeSpeed + (isNitroBoost ? accel * 1.4 : accel));
     } else if (isReversing) {
-      activeSpeed = Math.max(-maxSpeed * 0.45, activeSpeed - accel * 1.3);
+      activeSpeed = Math.max(-effectiveMaxSpeed * 0.45, activeSpeed - accel * 1.3);
     } else {
       activeSpeed *= friction;
       if (Math.abs(activeSpeed) < 0.02) activeSpeed = 0;
@@ -4993,8 +5025,8 @@ class OpenWorldGame {
 
     // Steering Controls (Left arrow steers LEFT, Right arrow steers RIGHT)
     const absSpeed = Math.abs(activeSpeed);
-    const isSteeringLeft = this.keys['a'] || this.keys['arrowleft'];
-    const isSteeringRight = this.keys['d'] || this.keys['arrowright'];
+    const isSteeringLeft = this.keys['a'] || this.keys['arrowleft'] || (this.analogStrafe < -0.15);
+    const isSteeringRight = this.keys['d'] || this.keys['arrowright'] || (this.analogStrafe > 0.15);
 
     if (absSpeed > 0.03 || ((isAccelerating || isReversing) && (isSteeringLeft || isSteeringRight))) {
       const dir = (activeSpeed >= 0) ? 1 : -1;
