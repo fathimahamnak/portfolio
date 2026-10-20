@@ -63,6 +63,7 @@
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2
       };
+      this.maxRadius = Math.max(26, Math.min(48, rect.width * 0.38));
     }
 
     vibrate(ms = 15) {
