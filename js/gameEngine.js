@@ -25,9 +25,9 @@ class OpenWorldGame {
     this.carPos = { x: 28, y: 0, z: -380 }; // Curbside on Campus Boulevard
     this.carRot = Math.PI;
     this.carSpeed = 0;
-    this.carMaxSpeed = 8.5;
-    this.carAcceleration = 0.18;
-    this.carFriction = 0.96;
+    this.carMaxSpeed = 3.8;
+    this.carAcceleration = 0.085;
+    this.carFriction = 0.97;
     this.isDriving = false;
 
     // Realistic Car Collision, Roll-Over & Tumble Physics
@@ -4874,7 +4874,7 @@ class OpenWorldGame {
     let inputStrafe = this.analogStrafe || 0;
     const isSprint = this.keys['shift'] || this.mobileSprint;
     const timeScale = Math.min(delta / 0.016667, 2.0);
-    const speed = (isSprint ? 3.8 : 2.2) * timeScale;
+    const speed = (isSprint ? 1.75 : 0.92) * timeScale;
 
     // Up Arrow / W: Move forward in camera view direction
     if (this.keys['w'] || this.keys['arrowup']) inputForward += 1;
@@ -4932,8 +4932,8 @@ class OpenWorldGame {
         }
       } else if (uData && uData.leftLegGroup && uData.rightLegGroup) {
         // Procedural gait animations fallback
-        const time = Date.now() * (isSprint ? 0.016 : 0.011);
-        const stride = isSprint ? 0.95 : 0.65;
+        const time = Date.now() * (isSprint ? 0.011 : 0.007);
+        const stride = isSprint ? 0.85 : 0.55;
         uData.leftLegGroup.rotation.x = Math.sin(time) * stride;
         uData.rightLegGroup.rotation.x = -Math.sin(time) * stride;
 
@@ -5004,20 +5004,20 @@ class OpenWorldGame {
     let activeVy = isPolice ? (this.policeCarVy || 0) : (this.carVy || 0);
     let activeRoll = isPolice ? (this.policeCarRoll || 0) : (this.carRoll || 0);
 
-    const maxSpeed = isPolice ? (this.policeCarMaxSpeed || 8.2) : (this.carMaxSpeed || 8.5);
-    const accel = (isPolice ? (this.policeCarAcceleration || 0.17) : (this.carAcceleration || 0.22)) * timeScale;
-    const friction = Math.pow(isPolice ? (this.policeCarFriction || 0.96) : (this.carFriction || 0.965), timeScale);
+    const maxSpeed = isPolice ? (this.policeCarMaxSpeed || 3.7) : (this.carMaxSpeed || 3.8);
+    const accel = (isPolice ? (this.policeCarAcceleration || 0.08) : (this.carAcceleration || 0.085)) * timeScale;
+    const friction = Math.pow(isPolice ? (this.policeCarFriction || 0.97) : (this.carFriction || 0.972), timeScale);
 
     const isAccelerating = this.keys['w'] || this.keys['arrowup'] || (this.analogForward > 0.15);
     const isReversing = this.keys['s'] || this.keys['arrowdown'] || (this.analogForward < -0.15);
     const isHandbraking = this.keys[' '] || this.mobileHandbrake; // Spacebar = Handbrake / Drift
     const isNitroBoost = this.keys['shift'] || this.mobileSprint;
-    const effectiveMaxSpeed = isNitroBoost ? maxSpeed * 1.25 : maxSpeed;
+    const effectiveMaxSpeed = isNitroBoost ? maxSpeed * 1.3 : maxSpeed;
 
     if (isAccelerating) {
-      activeSpeed = Math.min(effectiveMaxSpeed, activeSpeed + (isNitroBoost ? accel * 1.4 : accel));
+      activeSpeed = Math.min(effectiveMaxSpeed, activeSpeed + (isNitroBoost ? accel * 1.3 : accel));
     } else if (isReversing) {
-      activeSpeed = Math.max(-effectiveMaxSpeed * 0.45, activeSpeed - accel * 1.3);
+      activeSpeed = Math.max(-1.6, activeSpeed - accel * 0.9);
     } else {
       activeSpeed *= friction;
       if (Math.abs(activeSpeed) < 0.02) activeSpeed = 0;
@@ -5030,12 +5030,12 @@ class OpenWorldGame {
 
     if (absSpeed > 0.03 || ((isAccelerating || isReversing) && (isSteeringLeft || isSteeringRight))) {
       const dir = (activeSpeed >= 0) ? 1 : -1;
-      const turnSens = (isPolice ? 0.038 : 0.044) * timeScale;
+      const turnSens = (isPolice ? 0.034 : 0.038) * timeScale;
 
-      if (isHandbraking && absSpeed > 1.2) {
+      if (isHandbraking && absSpeed > 0.8) {
         activeSpeed *= Math.pow(0.985, timeScale);
-        if (isSteeringLeft) activeRot += (isPolice ? 0.065 : 0.072) * dir * timeScale;
-        if (isSteeringRight) activeRot -= (isPolice ? 0.065 : 0.072) * dir * timeScale;
+        if (isSteeringLeft) activeRot += (isPolice ? 0.055 : 0.060) * dir * timeScale;
+        if (isSteeringRight) activeRot -= (isPolice ? 0.055 : 0.060) * dir * timeScale;
 
         if (Math.random() < 0.28 && window.gameAudio && window.gameAudio.playTireScreech) {
           window.gameAudio.playTireScreech();
@@ -5661,57 +5661,57 @@ class OpenWorldGame {
     const envMap = window.GTARealisticEnvironment ? window.GTARealisticEnvironment.envMap : null;
     let newMesh = null;
     let carName = "Exotic Supercar";
-    let maxSpd = 8.8;
-    let accel = 0.20;
+    let maxSpd = 3.8;
+    let accel = 0.085;
 
     if (modelId === 'benz' || modelId === 'bens' || modelId === 'gwagon') {
       newMesh = window.GTARealisticEntities.createMercedesBenzGWagon(0x18181b, envMap);
       carName = "Mercedes-Benz G63 AMG 4MATIC V8";
-      maxSpd = 9.0; accel = 0.23;
+      maxSpd = 3.7; accel = 0.085;
     } else if (modelId === 'bmw' || modelId === 'm4') {
       newMesh = window.GTARealisticEntities.createBmwM4Competition(0x0284c7, envMap);
       carName = "BMW M4 Competition Twin-Turbo";
-      maxSpd = 9.5; accel = 0.25;
+      maxSpd = 3.9; accel = 0.095;
     } else if (modelId === 'rollsroyce' || modelId === 'rolsroys' || modelId === 'phantom') {
       newMesh = window.GTARealisticEntities.createRollsRoycePhantom(0x090d16, envMap);
       carName = "Rolls-Royce Phantom VIII Extended Limousine";
-      maxSpd = 8.6; accel = 0.20;
+      maxSpd = 3.6; accel = 0.080;
     } else if (modelId === 'audi' || modelId === 'oudi' || modelId === 'r8') {
       newMesh = window.GTARealisticEntities.createAudiR8Supercar(0xf59e0b, envMap);
       carName = "Audi R8 V10 Plus Quattro Supercar";
-      maxSpd = 9.8; accel = 0.26;
+      maxSpd = 4.1; accel = 0.105;
     } else if (modelId === 'innova' || modelId === 'crysta') {
       newMesh = window.GTARealisticEntities.createToyotaInnovaCrysta(0xe2e8f0, envMap);
       carName = "Toyota Innova Crysta 2.8 Touring MPV";
-      maxSpd = 7.9; accel = 0.17;
+      maxSpd = 3.3; accel = 0.070;
     } else if (modelId === 'tesla' || modelId === 'plaid') {
       newMesh = window.GTARealisticEntities.createTeslaModelSPlaid(0xdc2626, envMap);
       carName = "Tesla Model S Plaid Tri-Motor AWD";
-      maxSpd = 10.2; accel = 0.30;
+      maxSpd = 4.2; accel = 0.110;
     } else if (modelId === 'lamborghini') {
       newMesh = window.GTARealisticEntities.createLamborghiniHypercar(0x84cc16, envMap);
       carName = "Lamborghini Aventador SVJ V12";
-      maxSpd = 9.8; accel = 0.25;
+      maxSpd = 4.1; accel = 0.105;
     } else if (modelId === 'porsche') {
       newMesh = window.GTARealisticEntities.createPorscheGT3Coupe(0xdc2626, envMap);
       carName = "Porsche 911 GT3 RS Track Coupe";
-      maxSpd = 9.3; accel = 0.23;
+      maxSpd = 4.0; accel = 0.100;
     } else if (modelId === 'shelby') {
       newMesh = window.GTARealisticEntities.createVintageShelbyMuscle(0x1d4ed8, envMap);
       carName = "1967 Shelby GT500 Fastback Muscle";
-      maxSpd = 8.5; accel = 0.21;
+      maxSpd = 3.8; accel = 0.090;
     } else if (modelId === 'eldorado') {
       newMesh = window.GTARealisticEntities.createVintageEldoradoClassic(0xb91c1c, envMap);
       carName = "1959 Cadillac Eldorado Classic Convertible";
-      maxSpd = 7.8; accel = 0.16;
+      maxSpd = 3.4; accel = 0.075;
     } else if (modelId === 'cybertruck') {
       newMesh = window.GTARealisticEntities.createCyberArmoredSUV(0x64748b, envMap);
       carName = "Cyber Armored Titanium 4x4";
-      maxSpd = 8.0; accel = 0.18;
+      maxSpd = 3.6; accel = 0.080;
     } else if (modelId === 'rangerover') {
       newMesh = window.GTARealisticEntities.createLuxuryVIPSUV(0x09090b, envMap);
       carName = "Range Rover SV Obsidian Black VIP";
-      maxSpd = 8.4; accel = 0.19;
+      maxSpd = 3.7; accel = 0.085;
     } else if (modelId === 'police') {
       this.currentVehicle = 'police';
       this.isDriving = true;
@@ -5719,6 +5719,8 @@ class OpenWorldGame {
       this.policeCarPos.x = -200;
       this.policeCarPos.z = 195;
       this.policeCarRot = 0;
+      this.policeCarMaxSpeed = 3.7;
+      this.policeCarAcceleration = 0.08;
       if (this.policeCar) {
         this.policeCar.position.set(-200, 0, 195);
         this.policeCar.rotation.y = 0;
@@ -5735,7 +5737,7 @@ class OpenWorldGame {
         newMesh = window.GTARealisticEntities.createFerrariSupercar(0xf59e0b, envMap);
       }
       carName = "Ferrari F8 Tributo Supercar";
-      maxSpd = 9.4; accel = 0.22;
+      maxSpd = 4.0; accel = 0.100;
     }
 
     if (newMesh) {
